@@ -84,42 +84,42 @@
         }
 
         /// <summary>
-        /// The send.
+        /// Sends an email asynchronously, logging any errors.
         /// </summary>
         /// <param name="msg">
-        /// The message.
+        /// The <see cref="MailMessage"/> to send.
         /// </param>
         /// <param name="credentials">
-        /// The credentials.
+        /// The <see cref="NetworkCredential"/>s containing identity credentials.
         /// </param>
         /// <returns>
-        /// The <see cref="bool"/>.
+        /// True if the email is sent successfully; otherwise, false.
         /// </returns>
         public static bool Send(MailMessage msg, NetworkCredential credentials = null)
         {
-            var success = true;
+            bool success = true;
 
-            //// We want to send the email async
-            Task.Factory.StartNew(
-                () =>
-                    {
-                        try
-                        {
-                            using (msg)
-                            {
-                                using (var sender = new SmtpClient())
-                                {
-                                    sender.Credentials = credentials ?? CredentialCache.DefaultNetworkCredentials;
-                                    sender.Send(msg);
-                                }
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            LogHelper.Error<SmtpMailer>("Buzz.Hybrid.Net.SmtpMailer failed sending email", ex);
-                            success = false;
-                        }
-                    });
+            try
+            {
+                // We want to send the email async
+                SmtpClient smtpClient = new SmtpClient()
+                {
+                    Credentials = credentials ?? CredentialCache.DefaultNetworkCredentials
+                };
+
+                smtpClient.SendCompleted += (sender, args) =>
+                {
+                    smtpClient.Dispose();
+                    msg.Dispose();
+                };
+
+                smtpClient.SendAsync(msg, null);
+            }
+            catch (Exception ex)
+            {
+                success = false;
+                LogHelper.Error<SmtpMailer>("Buzz.Hybrid.Net.SmtpMailer failed sending email", ex);
+            }
 
             return success;
         }
