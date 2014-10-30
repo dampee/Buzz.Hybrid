@@ -107,13 +107,7 @@
                     Credentials = credentials ?? CredentialCache.DefaultNetworkCredentials
                 };
 
-                smtpClient.SendCompleted += (sender, args) =>
-                {
-                    smtpClient.Dispose();
-                    msg.Dispose();
-                };
-
-                smtpClient.SendAsync(msg, null);
+                smtpClient.Send(msg, null);
             }
             catch (Exception ex)
             {
